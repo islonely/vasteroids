@@ -6,13 +6,11 @@
  *	This will probably be on hold until V0.3 is released. As far as I'm
  * 	aware there is no way to rotate images in
 */
-import sokol.sgl
 import gg
 import gx
 import math
 import time
-import rand.sys
-import rand.seed
+import rand
 
 const (
 	win_title   = 'Game'
@@ -44,7 +42,7 @@ mut:
 	max_projectiles  int = 10
 	stars            []&Star
 	bgcolor          gx.Color     = gx.white
-	keys_down        map[int]bool = map{
+	keys_down        map[int]bool = {
 		262: false // right
 		263: false // left
 		264: false // down
@@ -96,10 +94,14 @@ mut:
 
 fn new_star(mut gg gg.Context) &Star {
 	img := gg.create_image_from_byte_array(star.to_bytes())
-	mut sysrng := sys.SysRNG{}
-	sysrng.seed(seed.time_seed_array(1))
-	x := sysrng.u32n(u32(win_width - img.width))
-	y := sysrng.u32n(u32(win_height - img.height))
+	x := rand.u32n(u32(win_width - img.width)) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
+	y := rand.u32n(u32(win_height - img.height)) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
 	return &Star{
 		img: img
 		pos: Pos{
@@ -140,15 +142,33 @@ fn new_asteroid(mut gg gg.Context, size AsteroidSize) Asteroid {
 		.large { img = gg.create_image_from_byte_array(lg_asteroid.to_bytes()) }
 	}
 
-	mut sysrng := sys.SysRNG{}
-	sysrng.seed(seed.time_seed_array(1))
 
-	x := sysrng.u32n(u32(win_width - img.width))
-	y := sysrng.u32n(u32(win_height - img.height))
+	x := rand.u32n(u32(win_width - img.width)) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
+	y := rand.u32n(u32(win_height - img.height)) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
 	maxv := f32(0.25)
 	minv := f32(0.1)
-	xv := sysrng.f32_in_range(minv, maxv) * is_odd(sysrng.int_in_range(0, 2))
-	yv := sysrng.f32_in_range(minv, maxv) * is_odd(sysrng.int_in_range(0, 2))
+	mut xv := rand.f32_in_range(minv, maxv) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
+	xv *= is_odd(rand.int_in_range(0, 2) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	})
+	mut yv := rand.f32_in_range(minv, maxv) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
+	yv *= is_odd(rand.int_in_range(0, 2) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	})
 	return Asteroid{
 		img: img
 		pos: Pos{
@@ -231,10 +251,14 @@ fn (mut p Player) center(gg &gg.Context) {
 
 fn (mut p Player) teleport(gg &gg.Context) {
 	mut padding := u32(25)
-	mut sysrng := sys.SysRNG{}
-	sysrng.seed(seed.time_seed_array(1))
-	p.pos.x = sysrng.u32_in_range(padding, u32(gg.width - p.img.width) - padding)
-	p.pos.y = sysrng.u32_in_range(padding, u32(gg.height - p.img.height) - padding)
+	p.pos.x = rand.u32_in_range(padding, u32(gg.width - p.img.width) - padding) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
+	p.pos.y = rand.u32_in_range(padding, u32(gg.height - p.img.height) - padding) or {
+		println('Fatal Error: $err.msg')
+		exit(0)
+	}
 	p.vel.x = 0
 	p.vel.y = 0
 }
@@ -282,7 +306,7 @@ fn (mut app App) draw() {
 
 fn (mut app App) update() {
 	app.handle_keydown()
-	for i, mut projectile in app.projectiles {
+	for mut projectile in app.projectiles {
 		// delete projectiles if they go off the screen
 		// if projectile.pos.x < -projectile.img.width
 		// 	|| projectile.pos.x > app.gg.width
