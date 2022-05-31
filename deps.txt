@@ -1,6 +1,0 @@
-builtin/gg
-builtin/gx
-builtin/os
-builtin/rand.sys
-builtin/rand.seed
-builtin/math
