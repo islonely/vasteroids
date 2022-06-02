@@ -68,9 +68,8 @@ mut:
 // draw draws the menu to the screen
 fn (m &Menu) draw(g &gg.Context) {
 	mut i := 0
+	g.draw_text(-100, -100, '', m.text_conf)
 	for key in m.items.keys() {
-		_ := g.text_width(key)
-		_ := g.text_height(key)
 		rectx := m.pos.x
 		recty := m.pos.y + (i * (m.height + m.padding))
 		textx := int(m.pos.x + (m.width / 2) - (g.text_width(key) / 2))
@@ -399,11 +398,43 @@ mut:
 	z f32
 }
 
+fn (mut app App) break_asteroid(i int) {
+	a := app.asteroids[i]
+	if a.size == .small {
+		app.asteroids.delete(i)
+		return
+	}
+
+	mut a2 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) - 1))
+	mut a3 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) - 1))
+	a2.vel = a.vel
+	a2.vel.y = a.vel.x
+	a2.vel.x = a.vel.y
+	a3.vel = a.vel
+	a3.vel.y = -a.vel.x
+	a3.vel.x = -a.vel.y
+
+	app.asteroids << a2
+	app.asteroids << a3
+	app.asteroids.delete(i)
+}
+
 // frame controls what happens every frame.
 fn frame(mut app App) {
 	app.gg.begin()
 	match app.state {
-		.paused {}
+		.paused {
+			app.draw()
+			text := 'Paused'
+			size := int(72 * app.gg.scale)
+			x := int((app.gg.width * app.gg.scale / 2) - (app.gg.text_width(text) / 2))
+			y := int((app.gg.height * app.gg.scale / 2) - (app.gg.text_height(text) / 2))
+			app.gg.draw_text(x, y, text,
+				size: size
+				bold: true
+				color: gx.white
+			)
+		}
 		.in_game {
 			app.draw()
 			app.update()
@@ -426,26 +457,23 @@ fn (mut app App) draw() {
 	for projectile in app.projectiles {
 		draw_renderable_object(projectile, app.gg)
 	}
-	draw_renderable_object(app.player, app.gg)
 
 	// app.player.draw(app.gg)
 	for mut a in app.asteroids {
 		draw_renderable_object(a, app.gg)
 	}
+
+	app.gg.draw_text(int(app.gg.width * app.gg.scale - 30), 15, app.score.str(),
+		bold: true
+		size: 32
+		color: gx.white
+	)
 }
 
 // update controls the physics/logic that happens on each frame.
 fn (mut app App) update() {
 	app.handle_keydown()
 	for mut projectile in app.projectiles {
-		// delete projectiles if they go off the screen
-		// if projectile.pos.x < -projectile.img.width
-		// 	|| projectile.pos.x > app.gg.width
-		// 	|| projectile.pos.y < -projectile.img.height
-		// 	|| projectile.pos.y > app.gg.height {
-		// 	app.projectiles.delete(i)
-		// 	continue
-		// }
 		projectile.update()
 	}
 	app.player.update(app.gg)
@@ -511,45 +539,73 @@ fn (mut app App) fire_projectile() {
 
 // on_event handles any events
 fn on_event(e &gg.Event, mut app App) {
-	match e.typ {
-		.key_down {
-			// key presses i.e. doesn't detect when key is held down.
-			if e.key_code == .down && !app.keys_down[e.key_code] && app.state == .start_menu {
-				// move down in the list of menu items or to the top if we're at the end
-				keys := app.menu.items.keys()
-				idx := keys.index(app.menu.focused)
-				if idx >= 0 {
-					if idx == keys.len - 1 {
-						app.menu.focused = keys[0]
-					} else {
-						app.menu.focused = keys[idx + 1]
+	match app.state {
+		.paused {
+			match e.typ {
+				.key_down {
+					if e.key_code == .escape {
+						app.state = .in_game
 					}
 				}
-			} else if e.key_code == .up && !app.keys_down[e.key_code] && app.state == .start_menu {
-				// move up in the list of menu items or loop to the end if we're at the top
-				keys := app.menu.items.keys()
-				idx := keys.index(app.menu.focused)
-				if idx >= 0 {
-					if idx == 0 {
-						app.menu.focused = keys[keys.len - 1]
-					} else {
-						app.menu.focused = keys[idx - 1]
-					}
-				}
-			} else if e.key_code == .enter && !app.keys_down[e.key_code] && app.state == .start_menu {
-				// invoke callback function of whatever menu item is selected
-				app.menu.items[app.menu.focused](mut app)
-			} else if e.key_code == .x && !app.keys_down[e.key_code] {
-				app.fire_projectile()
-			} else if e.key_code == .z && !app.keys_down[e.key_code] {
-				app.player.teleport(app.gg)
-			} else if e.key_code in app.keys_down {
-				app.keys_down[e.key_code] = true
+				else {}
 			}
 		}
-		.key_up {
-			if e.key_code in app.keys_down {
-				app.keys_down[e.key_code] = false
+		.start_menu {
+			match e.typ {
+				.key_down {
+					if e.key_code == .down {
+						// move down in the list of menu items or to the top if we're at the end
+						keys := app.menu.items.keys()
+						idx := keys.index(app.menu.focused)
+						if idx >= 0 {
+							if idx == keys.len - 1 {
+								app.menu.focused = keys[0]
+							} else {
+								app.menu.focused = keys[idx + 1]
+							}
+						}
+					} else if e.key_code == .up {
+						// move up in the list of menu items or loop to the end if we're at the top
+						keys := app.menu.items.keys()
+						idx := keys.index(app.menu.focused)
+						if idx >= 0 {
+							if idx == 0 {
+								app.menu.focused = keys[keys.len - 1]
+							} else {
+								app.menu.focused = keys[idx - 1]
+							}
+						}
+					} else if e.key_code == .enter {
+						// invoke callback function of whatever menu item is selected
+						app.menu.items[app.menu.focused](mut app)
+					}
+				}
+				else {}
+			}
+		}
+		.in_game {
+			match e.typ {
+				.key_down {
+					// key presses i.e. doesn't detect when key is held down.
+					if e.key_code == .x && !app.keys_down[e.key_code] {
+						app.fire_projectile()
+					} else if e.key_code == .z && !app.keys_down[e.key_code] {
+						app.player.teleport(app.gg)
+					} else if e.key_code == .escape && !app.keys_down[e.key_code] {
+						app.state = .paused
+					} else if e.key_code == .b && !app.keys_down[e.key_code]
+						&& gg.Modifier(e.modifiers) == .ctrl {
+						app.break_asteroid(0)
+					} else if e.key_code in app.keys_down {
+						app.keys_down[e.key_code] = true
+					}
+				}
+				.key_up {
+					if e.key_code in app.keys_down {
+						app.keys_down[e.key_code] = false
+					}
+				}
+				else {}
 			}
 		}
 		else {}
@@ -565,36 +621,16 @@ fn (mut app App) handle_keydown() {
 				match key {
 					.right {
 						if key_is_down {
-							// app.player.vel.x += accel
-							// if app.player.vel.x > app.player.vel.max {
-							// 	app.player.vel.x = app.player.vel.max
-							// }
 							app.player.angle -= 1
 						}
 					}
 					.left {
 						if key_is_down {
-							// app.player.vel.x -= accel
-							// if app.player.vel.x < -app.player.vel.max {
-							// 	app.player.vel.x = -app.player.vel.max
-							// }
 							app.player.angle += 1
 						}
 					}
-					// 264 {
-					// 	if key_is_down {
-					// 		app.player.vel.y += accel
-					// 		if app.player.vel.y > app.player.vel.max {
-					// 			app.player.vel.y = app.player.vel.max
-					// 		}
-					// 	}
-					// }
 					.up {
 						if key_is_down {
-							// app.player.vel.y -= accel
-							// if app.player.vel.y < -app.player.vel.max {
-							// 	app.player.vel.y = -app.player.vel.max
-							// }
 							// disallow accellerating while turning
 							if app.keys_down[.left] || app.keys_down[.right] {
 								return
