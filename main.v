@@ -12,8 +12,8 @@ import gx
 // window configuration
 const (
 	win_title   = 'Vasteroids'
-	win_width   = 600
-	win_height  = 400
+	win_width   = 1200
+	win_height  = 800
 	win_bgcolor = gx.Color{
 		r: 20
 		g: 20
@@ -31,7 +31,6 @@ const (
 	player_img  = $embed_file('img/player.png')
 
 	hyperspace  = $embed_file('fonts/hyperspace/Hyperspace Bold.otf')
-	simvoni     = $embed_file('fonts/Simvoni/Simvoni.ttf')
 )
 
 // GameState is the state which the game is in.
@@ -442,11 +441,13 @@ fn main() {
 	}
 	app.gg = gg.new_context(
 		bg_color: app.bgcolor
-		width: win_width * 2
-		height: win_height * 2
-		use_ortho: true
+		width: win_width
+		height: win_height
 		create_window: true
+		// these two currently don't do anything
+		borderless_window: true
 		resizable: false
+		//
 		window_title: win_title
 		font_bytes_bold: hyperspace.to_bytes()
 		font_bytes_normal: hyperspace.to_bytes()
