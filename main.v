@@ -37,50 +37,11 @@ const (
 // GameState is the state which the game is in.
 enum GameState {
 	paused
+	settings
 	in_game
 	new_game
 	start_menu
 	game_over
-}
-
-// Menu is list of labels with a callback function that is
-// invoked when a label is selected.
-struct Menu {
-	items         map[string]fn (mut App)
-	padding       int        = 10
-	width         int        = 125
-	height        int        = 20
-	radius        int        = 3
-	color         gx.Color   = gx.Color{0xcc, 0xcc, 0xcc, 0xdd}
-	focused_color gx.Color   = gx.Color{0xaa, 0xcf, 0xff, 0xdd}
-	text_conf     gx.TextCfg = gx.TextCfg{
-		color: gx.black
-		size: 25
-		max_width: 125
-	}
-mut:
-	focused string
-	pos     Pos
-}
-
-// draw draws the menu to the screen
-fn (m &Menu) draw(g &gg.Context) {
-	mut i := 0
-	g.draw_text(-100, -100, '', m.text_conf)
-	for key in m.items.keys() {
-		rectx := m.pos.x
-		recty := m.pos.y + (i * (m.height + m.padding))
-		textx := int(m.pos.x + (m.width / 2) - (g.text_width(key) / 2))
-		texty := int(m.pos.y + (m.height / 2) - (g.text_height(key) / 2) + (i * (m.height +
-			m.padding)))
-		g.draw_rounded_rect_filled(rectx, recty, m.width, m.height, m.radius, if m.focused == key {
-			m.focused_color
-		} else {
-			m.color
-		})
-		g.draw_text(textx, texty, key, m.text_conf)
-		i++
-	}
 }
 
 struct App {
@@ -89,6 +50,7 @@ mut:
 	state            GameState = .start_menu
 	menu             Menu
 	delta            Delta
+	show_fps         bool
 	score            int
 	player           Player
 	asteroids        []Asteroid
@@ -109,6 +71,8 @@ mut:
 	}
 }
 
+// break_asteroid splits in asteroid into smaller chunks or destroys it if
+// it's already the smallest size.
 fn (mut app App) break_asteroid(i int) {
 	a := app.asteroids[i]
 	if a.size == .small {
@@ -133,18 +97,19 @@ fn (mut app App) break_asteroid(i int) {
 // frame controls what happens every frame.
 fn frame(mut app App) {
 	app.gg.begin()
+	app.delta.update()
+	// println(app.delta.delta)
+	if app.show_fps {
+		app.gg.draw_text(15, 15, 'FPS: $app.delta.fps()',
+			bold: true
+			size: 32
+			color: gx.white
+		)
+	}
 	match app.state {
 		.paused {
 			app.draw()
-			text := 'Paused'
-			size := int(72 * app.gg.scale)
-			x := int((app.gg.width * app.gg.scale / 2) - (app.gg.text_width(text) / 2))
-			y := int((app.gg.height * app.gg.scale / 2) - (app.gg.text_height(text) / 2))
-			app.gg.draw_text(x, y, text,
-				size: size
-				bold: true
-				color: gx.white
-			)
+			app.draw_title_center('Paused')
 		}
 		.in_game {
 			app.draw()
@@ -155,7 +120,13 @@ fn frame(mut app App) {
 			app.draw_start_menu()
 			app.update_start_menu()
 		}
-		.game_over {}
+		.game_over {
+			app.draw_title('Game Over')
+		}
+		.settings {
+			app.draw_settings()
+			app.update_settings()
+		}
 	}
 	app.gg.end()
 }
@@ -185,14 +156,15 @@ fn (mut app App) draw() {
 fn (mut app App) update() {
 	app.handle_keydown()
 	for mut projectile in app.projectiles {
-		projectile.update()
+		projectile.update(app.delta.delta)
 	}
-	app.player.update(app.gg)
+	app.player.update(app.gg, app.delta.delta)
 	for mut a in app.asteroids {
-		a.update(app.gg)
+		a.update(app.gg, app.delta.delta)
 	}
 }
 
+// draw_start_menu draws the start menu content to the screen.
 fn (mut app App) draw_start_menu() {
 	for a in app.asteroids {
 		draw_renderable_object(a, app.gg)
@@ -201,22 +173,57 @@ fn (mut app App) draw_start_menu() {
 		draw_renderable_object(s, app.gg)
 	}
 
-	logo_text := 'Vasteroids'
-	logo_size := int(72 * app.gg.scale)
-	logox := int((app.gg.width * app.gg.scale / 2) - (logo_text.len * logo_size / 4) + 10)
-	logoy := int(150 * app.gg.scale)
-	app.gg.draw_text(logox, logoy, logo_text,
-		size: logo_size
-		bold: true
-		color: gx.white
-	)
+	app.draw_title('Vasteroids')
 	app.menu.draw(app.gg)
 }
 
+// draw_settings draws the settings content to the screen.
+fn (mut app App) draw_settings() {
+	for a in app.asteroids {
+		draw_renderable_object(a, app.gg)
+	}
+	for s in app.stars {
+		draw_renderable_object(s, app.gg)
+	}
+
+	app.draw_title('Settings')
+}
+
+// update_start_menu updates the moving background items in the start menu.
 fn (mut app App) update_start_menu() {
 	for mut a in app.asteroids {
-		a.update(app.gg)
+		a.update(app.gg, app.delta.delta)
 	}
+}
+
+// update_settings updates the moving background items in the settings menu.
+fn (mut app App) update_settings() {
+	for mut a in app.asteroids {
+		a.update(app.gg, app.delta.delta)
+	}
+}
+
+// draw_title draws big, horizontally centered text onto the screen.
+fn (mut app App) draw_title(title string) {
+	title_size := int(75 * app.gg.scale)
+	titlex := int((app.gg.width * app.gg.scale / 2) - (title.len * title_size / 4) + 12)
+	titley := int(170 * app.gg.scale)
+	app.gg.draw_text(titlex, titley, title,
+		size: title_size
+		bold: true
+		color: gx.white
+	)
+}
+
+fn (mut app App) draw_title_center(text string) {
+	size := int(75 * app.gg.scale)
+	x := int((app.gg.width * app.gg.scale / 2) - (text.len * size / 4) + 12)
+	y := int((app.gg.height * app.gg.scale / 2) - (app.gg.text_height(text) / 2)) - 10
+	app.gg.draw_text(x, y, text,
+		size: size
+		bold: true
+		color: gx.white
+	)
 }
 
 // fire_projectile sets a projectile at the players position
@@ -227,12 +234,9 @@ fn (mut app App) fire_projectile() {
 		app.player.img.height * app.gg.scale / 2 - app.projectiles[app.projectile_index].img.height * app.gg.scale / 2
 	app.projectiles[app.projectile_index].angle = app.player.angle
 
-	// radians_x := f64(app.player.angle + 90) * (math.pi / 180.0)
-	// radians_y := f64(app.player.angle + 90) * (math.pi / 180.0)
-	// vel_x := math.cos(radians_x)
-	// vel_y := math.sin(radians_y)
-	app.projectiles[app.projectile_index].vel.x, app.projectiles[app.projectile_index].vel.y = angle_to_velocity(app.player.angle,
-		10)
+	x, y := angle_to_velocity(app.player.angle, 10)
+	app.projectiles[app.projectile_index].vel.x = x
+	app.projectiles[app.projectile_index].vel.y = y
 	if app.projectile_index == app.max_projectiles - 1 {
 		app.projectile_index = 0
 	} else {
@@ -311,6 +315,16 @@ fn on_event(e &gg.Event, mut app App) {
 				else {}
 			}
 		}
+		.settings {
+			match e.typ {
+				.key_down {
+					if e.key_code == .escape && !app.keys_down[e.key_code] {
+						app.state = .start_menu
+					}
+				}
+				else {}
+			}
+		}
 		else {}
 	}
 }
@@ -319,17 +333,17 @@ fn on_event(e &gg.Event, mut app App) {
 fn (mut app App) handle_keydown() {
 	match app.state {
 		.in_game {
-			mut accel := f32(0.0035)
+			mut accel := app.player.acceleration * app.delta.delta
 			for key, key_is_down in app.keys_down {
 				match key {
 					.right {
 						if key_is_down {
-							app.player.angle -= 1
+							app.player.angle -= int(app.player.rotation_speed * app.delta.delta)
 						}
 					}
 					.left {
 						if key_is_down {
-							app.player.angle += 1
+							app.player.angle += int(app.player.rotation_speed * app.delta.delta)
 						}
 					}
 					.up {
@@ -338,8 +352,9 @@ fn (mut app App) handle_keydown() {
 							if app.keys_down[.left] || app.keys_down[.right] {
 								return
 							}
-							app.player.vel.maxx, app.player.vel.maxy = angle_to_velocity(app.player.angle,
-								1)
+							x, y := angle_to_velocity(app.player.angle, 1)
+							app.player.vel.maxx = x * 0.85
+							app.player.vel.maxy = y * 0.85
 							if app.player.vel.maxx > 0 {
 								if app.player.vel.x > app.player.vel.maxx {
 									app.player.vel.x -= accel
@@ -389,10 +404,13 @@ fn init(mut app App) {
 
 	app.menu = Menu{
 		items: {
-			'Start': fn (mut app App) {
+			'Start':    fn (mut app App) {
 				app.state = .in_game
 			}
-			'Quit':  fn (mut app App) {
+			'Settings': fn (mut app App) {
+				app.state = .settings
+			}
+			'Quit':     fn (mut app App) {
 				exit(0)
 			}
 		}
@@ -431,7 +449,7 @@ fn main() {
 		resizable: false
 		window_title: win_title
 		font_bytes_bold: hyperspace.to_bytes()
-		font_bytes_normal: simvoni.to_bytes()
+		font_bytes_normal: hyperspace.to_bytes()
 		frame_fn: frame
 		user_data: app
 		event_fn: on_event

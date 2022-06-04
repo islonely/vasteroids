@@ -1,15 +1,19 @@
 module main
 
 import gg
+import math
 import rand
 
 // Player is the object which the player controls
 struct Player {
 	img gg.Image
 mut:
-	pos   Pos
-	vel   Velocity
-	angle int
+	pos            Pos
+	vel            Velocity
+	angle          f32
+	rotation_speed f32 = 2.0
+	acceleration   f32 = 0.0085
+	deceleration   f32 = 0.993
 }
 
 // draw handles rendering the player to the screen
@@ -29,19 +33,19 @@ fn (mut p Player) draw(g &gg.Context) {
 }
 
 // update handles the physics/logic of the player
-fn (mut p Player) update(gg &gg.Context) {
+fn (mut p Player) update(gg &gg.Context, delta f32) {
 	wrap_around_screen(mut p, gg)
 
 	if p.vel.x != 0 {
-		p.vel.x *= 0.993
+		p.vel.x = p.vel.x * f32(math.pow(p.deceleration, delta))
 	}
 
 	if p.vel.y != 0 {
-		p.vel.y *= 0.993
+		p.vel.y = p.vel.y * f32(math.pow(p.deceleration, delta))
 	}
 
-	p.pos.x += p.vel.x
-	p.pos.y += p.vel.y
+	p.pos.x += p.vel.x * delta
+	p.pos.y += p.vel.y * delta
 
 	// p.angle = f32(math.sin(time.now().unix_time())) * 50
 }

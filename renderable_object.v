@@ -7,7 +7,7 @@ interface RenderableObject {
 	img gg.Image
 mut:
 	pos Pos
-	angle int
+	angle f32
 }
 
 // this is how you would draw almost any image, so let's create one function
@@ -15,7 +15,7 @@ mut:
 fn draw_renderable_object(ro &RenderableObject, g &gg.Context) {
 	// gg.draw_image(ro.pos.x, ro.pos.y, ro.img.width, ro.img.height, ro.img)
 	g.draw_image_with_config(
-		rotate: ro.angle
+		rotate: int(ro.angle)
 		img: &ro.img
 		img_rect: gg.Rect{
 			x: ro.pos.x

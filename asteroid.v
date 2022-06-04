@@ -11,7 +11,7 @@ struct Asteroid {
 mut:
 	pos   Pos
 	vel   Velocity
-	angle int
+	angle f32
 }
 
 // AsteroidSize is the size of the asterdroid drawn. In the original
@@ -26,8 +26,8 @@ pub enum AsteroidSize {
 // based on it's size
 fn new_asteroid(mut gg gg.Context, size AsteroidSize) Asteroid {
 	mut img := gg.create_image_from_byte_array([]byte{})
-	mut maxv := f32(0.25)
-	mut minv := f32(0.1)
+	mut maxv := f32(0.4)
+	mut minv := f32(0.25)
 	match size {
 		.small {
 			img = gg.create_image_from_byte_array(sm_asteroid.to_bytes())
@@ -84,9 +84,9 @@ fn new_asteroid(mut gg gg.Context, size AsteroidSize) Asteroid {
 }
 
 // update handles the physics/logic for asteroids
-fn (mut a Asteroid) update(gg &gg.Context) {
+fn (mut a Asteroid) update(gg &gg.Context, delta f32) {
 	wrap_around_screen(mut a, gg)
 
-	a.pos.x += a.vel.x
-	a.pos.y += a.vel.y
+	a.pos.x += a.vel.x * delta
+	a.pos.y += a.vel.y * delta
 }

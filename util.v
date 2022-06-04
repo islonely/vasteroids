@@ -1,5 +1,6 @@
 module main
 
+import arrays
 import math
 import rand
 import time
@@ -34,7 +35,7 @@ fn is_odd(x int) int {
 
 // angle_to_velocity converts an angle (0-360 degrees) to the
 // x, y velocity.
-fn angle_to_velocity(angle int, max_speed f32) (f32, f32) {
+fn angle_to_velocity(angle f32, max_speed f32) (f32, f32) {
 	radians := f64(angle + 90) * (math.pi / 180.0)
 	vel_x := math.cos(radians)
 	vel_y := math.sin(radians)
@@ -76,12 +77,25 @@ fn gen_pseudo_random_coords(rangex int, rangey int) []Pos {
 // Delta is used to control delta time.
 struct Delta {
 mut:
-	time1 time.Time = time.now()
-	time2 time.Time = time.now()
+	sw        time.StopWatch = time.new_stopwatch()
+	last_time i64
+	last_fps  []int = []int{len: 100}
+	delta     f32
 }
 
-// time calculates the delta time.
+// update calculates the delta time and ads the current fps to a buffer.
+fn (mut d Delta) update() {
+	// time.sleep(time.millisecond * 30)
+	elapsed := d.sw.elapsed().microseconds()
+	d.delta = f32(elapsed - d.last_time) / 10000.0
+	fps := 1000000.0 / f64(elapsed - d.last_time)
+	d.last_fps.delete(0)
+	d.last_fps << int(math.round(fps))
+	d.last_time = elapsed
+}
+
+// fps returns the average of the fps buffer
 [inline]
-fn (d Delta) time() f32 {
-	return f32(d.time2.unix_time_milli() - d.time1.unix_time_milli()) / f32(10000000.0)
+fn (d Delta) fps() int {
+	return (arrays.sum(d.last_fps) or { 0 }) / d.last_fps.len
 }

@@ -9,7 +9,7 @@ struct Projectile {
 mut:
 	pos   Pos
 	vel   Velocity
-	angle int
+	angle f32
 }
 
 // new_projectile instantiates Projectile and places it at the players position.
@@ -28,7 +28,7 @@ fn new_projectile(mut gg gg.Context, player &Player) Projectile {
 }
 
 // update changes the position of a Projectile based on the velocity property.
-fn (mut p Projectile) update() {
-	p.pos.x += p.vel.x
-	p.pos.y += p.vel.y
+fn (mut p Projectile) update(delta f32) {
+	p.pos.x += p.vel.x * delta
+	p.pos.y += p.vel.y * delta
 }

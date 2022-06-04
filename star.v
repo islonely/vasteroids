@@ -9,7 +9,7 @@ struct Star {
 	img gg.Image
 mut:
 	pos   Pos
-	angle int
+	angle f32
 }
 
 // new_star instantiates a Star
