@@ -5,8 +5,9 @@ import rand
 
 // Asteroid is one of the object the player can collide with or fire
 // their projectiles at.
+[heap]
 struct Asteroid {
-	img  gg.Image
+	img  &gg.Image
 	size AsteroidSize
 mut:
 	pos   Pos
@@ -24,24 +25,20 @@ pub enum AsteroidSize {
 
 // new_asteroid instantiates a new Asteroid and sets it's velocity
 // based on it's size
-fn new_asteroid(mut gg gg.Context, size AsteroidSize) Asteroid {
-	mut img := gg.create_image_from_byte_array([]byte{})
+fn new_asteroid(mut gg gg.Context, size AsteroidSize, i int) Asteroid {
+	mut img := gg.get_cached_image_by_idx(i)
 	mut maxv := f32(0.4)
 	mut minv := f32(0.25)
 	match size {
 		.small {
-			img = gg.create_image_from_byte_array(sm_asteroid.to_bytes())
 			maxv *= 1.3
 			minv *= 1.3
 		}
 		.medium {
-			img = gg.create_image_from_byte_array(md_asteroid.to_bytes())
 			maxv *= 1.15
 			minv *= 1.15
 		}
-		.large {
-			img = gg.create_image_from_byte_array(lg_asteroid.to_bytes())
-		}
+		.large {}
 	}
 
 	x := rand.u32n(u32(win_width - img.width)) or {

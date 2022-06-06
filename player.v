@@ -6,7 +6,7 @@ import rand
 
 // Player is the object which the player controls
 struct Player {
-	img gg.Image
+	img &gg.Image
 mut:
 	pos            Pos
 	vel            Velocity
@@ -20,16 +20,14 @@ mut:
 fn (mut p Player) draw(g &gg.Context) {
 	g.draw_image_with_config(
 		rotate: int(p.angle)
-		img: &p.img
+		img: p.img
 		img_rect: gg.Rect{
 			x: p.pos.x
 			y: p.pos.y
-			width: p.img.width * g.scale
-			height: p.img.height * g.scale
+			width: p.img.width / g.scale
+			height: p.img.height / g.scale
 		}
 	)
-
-	// gg.draw_image(p.pos.x, p.pos.y, p.img.width, p.img.height, p.img)
 }
 
 // update handles the physics/logic of the player
@@ -46,8 +44,6 @@ fn (mut p Player) update(gg &gg.Context, delta f32) {
 
 	p.pos.x += p.vel.x * delta
 	p.pos.y += p.vel.y * delta
-
-	// p.angle = f32(math.sin(time.now().unix_time())) * 50
 }
 
 // center places the character in the center of the window

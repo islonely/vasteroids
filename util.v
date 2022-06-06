@@ -2,7 +2,6 @@ module main
 
 import arrays
 import math
-import rand
 import time
 
 // Pos corresponds to a position on the screens.
@@ -10,7 +9,6 @@ struct Pos {
 mut:
 	x f32
 	y f32
-	// z f32
 }
 
 // Velocity is the direction something is move and the max
@@ -40,38 +38,6 @@ fn angle_to_velocity(angle f32, max_speed f32) (f32, f32) {
 	vel_x := math.cos(radians)
 	vel_y := math.sin(radians)
 	return f32(max_speed * vel_x), -f32(max_speed * vel_y)
-}
-
-// gen_pseudo_random_coords generates random X and Y coordinates in
-// the provided range. Generated coordinates are prevent by being close
-// to each other by separating the screen into block creating only one
-// position per block.
-fn gen_pseudo_random_coords(rangex int, rangey int) []Pos {
-	mut coords := []Pos{}
-	mut x, mut y := 0, 0
-	mut ypos, mut xpos := 0, 0
-	block_size := 150
-	padding := 20
-	for y < rangey {
-		for x < rangex {
-			xpos = rand.int_in_range(x + padding, x + block_size - padding) or {
-				println('Failed to generate random int.')
-				(-100)
-			}
-			ypos = rand.int_in_range(y + padding, y + block_size - padding) or {
-				println('Failed to generate random int.')
-				(-100)
-			}
-			coords << Pos{
-				x: xpos
-				y: ypos
-			}
-			x += block_size
-		}
-		y += block_size
-		x = 0
-	}
-	return coords
 }
 
 // Delta is used to control delta time.

@@ -10,7 +10,6 @@ struct Menu {
 	padding       int      = 10
 	width         int      = 125
 	height        int      = 20
-	radius        int      = 3
 	focused_color gx.Color = gx.white
 	color         gx.Color = gx.Color{0xaa, 0xaa, 0xaa, 0xff}
 	text_size     int      = 46
