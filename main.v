@@ -52,7 +52,10 @@ mut:
 	settings_menu    Menu
 	delta            Delta
 	show_fps         bool
+	level            int
 	score            int
+	shots_fired      int
+	asteroids_hit    int
 	player           Player
 	asteroids        []Asteroid
 	projectiles      []Projectile
@@ -82,19 +85,21 @@ fn (mut app App) break_asteroid(i int) {
 		return
 	}
 
-	mut a2 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) - 1), if a.size == .large {
+	mut a2 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) + 1), if a.size == .large {
 		app.img['md_asteroid']
 	} else {
 		app.img['sm_asteroid']
 	})
-	mut a3 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) - 1), if a.size == .large {
+	mut a3 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) + 1), if a.size == .large {
 		app.img['md_asteroid']
 	} else {
 		app.img['sm_asteroid']
 	})
+	a2.pos = a.pos
 	a2.vel = a.vel
 	a2.vel.y = a.vel.x
 	a2.vel.x = a.vel.y
+	a3.pos = a.pos
 	a3.vel = a.vel
 	a3.vel.y = -a.vel.x
 	a3.vel.x = -a.vel.y
@@ -143,7 +148,9 @@ fn frame(mut app App) {
 
 	// println(app.delta.delta)
 	if app.show_fps {
-		app.gg.draw_text(15, 15, 'FPS: $app.delta.fps()',
+		fps := app.delta.fps()
+		app.gg.draw_text(int(app.gg.width / app.gg.scale / 2) - app.gg.text_width(fps.str()),
+			15, 'FPS: $fps',
 			bold: true
 			size: 32
 			color: gx.white
@@ -164,7 +171,8 @@ fn frame(mut app App) {
 			app.update_start_menu()
 		}
 		.game_over {
-			app.draw_title('Game Over')
+			app.draw_game_over()
+			app.update_game_over()
 		}
 		.settings {
 			app.draw_settings()
@@ -183,13 +191,20 @@ fn (mut app App) draw() {
 		draw_renderable_object(projectile, app.gg)
 	}
 
-	app.player.draw(app.gg)
+	// app.player.draw(app.gg)
+	draw_renderable_object(app.player, app.gg)
 	for mut a in app.asteroids {
 		draw_renderable_object(a, app.gg)
 	}
 
-	app.gg.draw_text(int(app.gg.width / app.gg.scale - 30), int(15 / app.gg.scale), app.score.str(),
+	app.gg.draw_text(int(15 / app.gg.scale), int(15 / app.gg.scale), 'Level: $app.level.str()',
 		
+		bold: true
+		size: int(32 / app.gg.scale)
+		color: gx.white
+	)
+	app.gg.draw_text(int(app.gg.width / app.gg.scale - app.gg.text_width('Score: $app.score.str()') - 15),
+		int(15 / app.gg.scale), 'Score: $app.score.str()',
 		bold: true
 		size: int(32 / app.gg.scale)
 		color: gx.white
@@ -200,11 +215,15 @@ fn (mut app App) draw() {
 fn (mut app App) update() {
 	app.handle_keydown()
 	for mut projectile in app.projectiles {
-		projectile.update(app.delta.delta)
+		projectile.update(mut app)
 	}
-	app.player.update(app.gg, app.delta.delta)
+	app.player.update(mut app)
 	for mut a in app.asteroids {
 		a.update(app.gg, app.delta.delta)
+	}
+
+	if app.asteroids.len == 0 {
+		app.init_level()
 	}
 }
 
@@ -234,6 +253,40 @@ fn (mut app App) draw_settings() {
 	app.settings_menu.draw(app.gg)
 }
 
+fn (mut app App) draw_game_over() {
+	for s in app.stars {
+		draw_renderable_object(s, app.gg)
+	}
+	for a in app.asteroids {
+		draw_renderable_object(a, app.gg)
+	}
+
+	game_over_menu := Menu{
+		items: [
+			TextMenuItem{'Level: $app.level'},
+			TextMenuItem{'Score: $app.score'},
+			TextMenuItem{'Shots Fired: $app.shots_fired'},
+			TextMenuItem{'Accuracy: ' + ((app.asteroids_hit / f32(app.shots_fired)) * 100).str() +
+				'%'},
+			menu_line,
+			TextMenuItem{'Enter to continue...'},
+		]
+		width: int(300)
+		height: int(35 / app.gg.scale)
+		text_size: int(36 / app.gg.scale)
+		padding: int(10 / app.gg.scale)
+		center_text: false
+		focused: -1
+		color: gx.white
+		pos: Pos{
+			x: int((app.gg.width / app.gg.scale / 2) - (300 / 2))
+			y: int(300 / app.gg.scale) // int((app.gg.height / app.gg.scale / 2) - (35 / 2))
+		}
+	}
+	game_over_menu.draw(app.gg)
+	app.draw_title('Game Over')
+}
+
 // update_start_menu updates the moving background items in the start menu.
 fn (mut app App) update_start_menu() {
 	for mut a in app.asteroids {
@@ -243,6 +296,12 @@ fn (mut app App) update_start_menu() {
 
 // update_settings updates the moving background items in the settings menu.
 fn (mut app App) update_settings() {
+	for mut a in app.asteroids {
+		a.update(app.gg, app.delta.delta)
+	}
+}
+
+fn (mut app App) update_game_over() {
 	for mut a in app.asteroids {
 		a.update(app.gg, app.delta.delta)
 	}
@@ -273,11 +332,12 @@ fn (mut app App) draw_title_center(text string) {
 
 // fire_projectile sets a projectile at the players position
 fn (mut app App) fire_projectile() {
+	app.shots_fired++
 	app.projectiles[app.projectile_index].pos.x = app.player.pos.x + app.player.img.width / 2 - app.projectiles[app.projectile_index].img.width / 2
 	app.projectiles[app.projectile_index].pos.y = app.player.pos.y + app.player.img.height / 2 - app.projectiles[app.projectile_index].img.height / 2
 	app.projectiles[app.projectile_index].angle = app.player.angle
 
-	x, y := angle_to_velocity(app.player.angle, 10)
+	x, y := angle_to_velocity(app.player.angle, 7)
 	app.projectiles[app.projectile_index].vel.x = x
 	app.projectiles[app.projectile_index].vel.y = y
 	if app.projectile_index == app.max_projectiles - 1 {
@@ -340,6 +400,7 @@ fn on_event(e &gg.Event, mut app App) {
 							ToggleMenuItem {
 								selected_item.cb(mut app)
 							}
+							else {}
 						}
 					}
 				}
@@ -412,10 +473,19 @@ fn on_event(e &gg.Event, mut app App) {
 							ToggleMenuItem {
 								selected_item.cb(mut app)
 							}
+							else {}
 						}
 					}
 				}
 				else {}
+			}
+		}
+		.game_over {
+			if e.key_code == .enter {
+				app.state = .start_menu
+				app.level = 1
+				app.score = 0
+				app.init_level()
 			}
 		}
 		else {}
@@ -491,7 +561,7 @@ fn init(mut app App) {
 		star.pos = coords[i] or { break }
 	}
 
-	app.player.center(&app.gg)
+	app.player.center(app.gg)
 
 	// start menu
 	app.menu = Menu{
@@ -502,7 +572,7 @@ fn init(mut app App) {
 			ButtonMenuItem{'Settings', fn (mut app App) {
 				app.state = .settings
 			}},
-			ButtonMenuItem{'Quit', fn (mut app App) {
+			ButtonMenuItem{'Exit', fn (mut app App) {
 				exit(0)
 			}},
 		]
@@ -537,6 +607,7 @@ fn init(mut app App) {
 	show_fps_tggl.cb = fn (mut app App) {
 		app.show_fps = !app.show_fps
 		mut show_fps := &(app.settings_menu.items[0] as ToggleMenuItem)
+		// toggles the value between true and false
 		show_fps.value = (!(show_fps.value.bool())).str()
 	}
 	app.settings_menu.items << show_fps_tggl
@@ -562,6 +633,7 @@ fn resize(e &gg.Event, mut app App) {
 	}
 }
 
+// init_images caches the images to the gg.Context of the game.
 fn (mut app App) init_images() {
 	app.img['player'] = app.gg.cache_image(app.gg.create_image_from_byte_array(player_img.to_bytes()))
 	app.img['sm_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(sm_asteroid.to_bytes()))
@@ -569,6 +641,30 @@ fn (mut app App) init_images() {
 	app.img['lg_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(lg_asteroid.to_bytes()))
 	app.img['star'] = app.gg.cache_image(app.gg.create_image_from_byte_array(star.to_bytes()))
 	app.img['projectile'] = app.gg.cache_image(app.gg.create_image_from_byte_array(projectile.to_bytes()))
+}
+
+// init_level spawns new asteroids and resets player velocity
+// and position for the nexe level.
+fn (mut app App) init_level() {
+	app.asteroids = []Asteroid{}
+	for _ in 0 .. (4 + app.level * 2) {
+		app.asteroids << new_asteroid(mut app.gg, .large, app.img['lg_asteroid'])
+	}
+	app.keys_down = {
+		gg.KeyCode.right: false
+		gg.KeyCode.left:  false
+		gg.KeyCode.down:  false
+		gg.KeyCode.up:    false
+		gg.KeyCode.space: false
+		gg.KeyCode.enter: false
+		gg.KeyCode.x:     false
+		gg.KeyCode.z:     false
+	}
+	app.player = Player{
+		img: app.gg.get_cached_image_by_idx(app.img['player'])
+	}
+	app.player.center(app.gg)
+	app.level++
 }
 
 [console]
@@ -596,14 +692,6 @@ fn main() {
 		resized_fn: resize
 	)
 	app.init_images()
-
-	// app.asteroids = []Asteroid{len: 10, init: new_asteroid(mut app.gg, .large)}
-	for _ in 0 .. 10 {
-		app.asteroids << new_asteroid(mut app.gg, .large, app.img['lg_asteroid'])
-	}
-	app.player = Player{
-		img: app.gg.get_cached_image_by_idx(app.img['player'])
-	}
 	app.stars = []Star{len: 200, init: new_star(mut app.gg, app.img['star'])}
 	app.projectiles = []Projectile{len: app.max_projectiles, init: Projectile{
 		img: app.gg.get_cached_image_by_idx(app.img['projectile'])
@@ -611,10 +699,9 @@ fn main() {
 			x: -100
 			y: -100
 		}
-		vel: Velocity{
-			max: 6
-		}
 	}}
+
+	app.init_level()
 
 	app.gg.run()
 }

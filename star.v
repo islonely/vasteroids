@@ -10,6 +10,7 @@ struct Star {
 mut:
 	pos   Pos
 	angle f32
+	scale f32 = 1.0
 }
 
 // new_star instantiates a Star

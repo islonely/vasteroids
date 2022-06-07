@@ -13,9 +13,10 @@ mut:
 	pos   Pos
 	vel   Velocity
 	angle f32
+	scale f32 = 1.0
 }
 
-// AsteroidSize is the size of the asterdroid drawn. In the original
+// AsteroidSize is the size of the asteroid drawn. In the original
 // game small asteroids move across the screen faster.
 pub enum AsteroidSize {
 	large = 1
@@ -27,16 +28,19 @@ pub enum AsteroidSize {
 // based on it's size
 fn new_asteroid(mut gg gg.Context, size AsteroidSize, i int) Asteroid {
 	mut img := gg.get_cached_image_by_idx(i)
-	mut maxv := f32(0.4)
-	mut minv := f32(0.25)
+	mut maxv := f32(0.5)
+	mut minv := f32(-0.5)
+	mut scale := f32(1.0)
 	match size {
 		.small {
 			maxv *= 1.3
 			minv *= 1.3
+			scale = 1.5
 		}
 		.medium {
 			maxv *= 1.15
 			minv *= 1.15
+			scale = 1.25
 		}
 		.large {}
 	}
@@ -67,6 +71,7 @@ fn new_asteroid(mut gg gg.Context, size AsteroidSize, i int) Asteroid {
 	})
 	return Asteroid{
 		img: img
+		scale: scale
 		pos: Pos{
 			x: x
 			y: y

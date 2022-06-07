@@ -3,6 +3,8 @@ module main
 import gg
 import gx
 
+const menu_line = TextMenuItem{''}
+
 // Menu is list of labels with a callback function that is
 // invoked when a label is selected.
 struct Menu {
@@ -46,12 +48,19 @@ fn (m &Menu) draw(g &gg.Context) {
 					color: if i == m.focused { m.focused_color } else { m.color }
 				)
 			}
+			TextMenuItem {
+				g.draw_text(textx, texty, '$item.name',
+					bold: true
+					size: m.text_size
+					color: if i == m.focused { m.focused_color } else { m.color }
+				)
+			}
 		}
 	}
 }
 
 // MenuItem is a selectable item in a menu.
-type MenuItem = ButtonMenuItem | ToggleMenuItem
+type MenuItem = ButtonMenuItem | TextMenuItem | ToggleMenuItem
 
 // ButtonMenuItem is a MenuItem which you can press.
 struct ButtonMenuItem {
@@ -66,4 +75,8 @@ struct ToggleMenuItem {
 mut:
 	value string
 	cb    fn (mut App) = fn (mut app App) {}
+}
+
+struct TextMenuItem {
+	name string
 }
