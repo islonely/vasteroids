@@ -6,7 +6,6 @@ import gx
 // Menu is list of labels with a callback function that is
 // invoked when a label is selected.
 struct Menu {
-	items         map[string]fn (mut App)
 	padding       int      = 10
 	width         int      = 125
 	height        int      = 20
@@ -15,27 +14,56 @@ struct Menu {
 	text_size     int      = 46
 	center_text   bool     = true
 mut:
-	focused string
+	items   []MenuItem
+	focused int
 	pos     Pos
 }
 
 // draw draws the menu to the screen
 fn (m &Menu) draw(g &gg.Context) {
-	mut i := 0
 	g.draw_text(-100, -100, '', size: m.text_size)
-	for key in m.items.keys() {
+	for i, item in m.items {
 		textx := if m.center_text {
-			int((m.pos.x + (m.width / 2)) - g.text_width(key) / 2)
+			int((m.pos.x + (m.width / 2)) - g.text_width(item.name) / 2)
 		} else {
 			int(m.pos.x)
 		}
-		texty := int((m.pos.y + (m.height / 2) - (g.text_height(key) / 2) + (i * (m.height +
+		texty := int((m.pos.y + (m.height / 2) - (g.text_height(item.name) / 2) + (i * (m.height +
 			m.padding))))
-		i++
-		g.draw_text(textx, texty, key,
-			bold: true
-			size: m.text_size
-			color: if key == m.focused { m.focused_color } else { m.color }
-		)
+
+		match item {
+			ButtonMenuItem {
+				g.draw_text(textx, texty, item.name,
+					bold: true
+					size: m.text_size
+					color: if i == m.focused { m.focused_color } else { m.color }
+				)
+			}
+			ToggleMenuItem {
+				g.draw_text(textx, texty, '$item.name: $item.value',
+					bold: true
+					size: m.text_size
+					color: if i == m.focused { m.focused_color } else { m.color }
+				)
+			}
+		}
 	}
+}
+
+// MenuItem is a selectable item in a menu.
+type MenuItem = ButtonMenuItem | ToggleMenuItem
+
+// ButtonMenuItem is a MenuItem which you can press.
+struct ButtonMenuItem {
+	name string
+mut:
+	cb fn (mut App)
+}
+
+// ToggleMenuItem is a MenuItem which you can toggle.
+struct ToggleMenuItem {
+	name string
+mut:
+	value string
+	cb    fn (mut App) = fn (mut app App) {}
 }

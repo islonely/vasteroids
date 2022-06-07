@@ -12,7 +12,7 @@ mut:
 	vel            Velocity
 	angle          f32
 	rotation_speed f32 = 2.0
-	acceleration   f32 = 0.0085
+	acceleration   f32 = 0.009
 	deceleration   f32 = 0.993
 }
 

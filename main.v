@@ -49,6 +49,7 @@ mut:
 	gg               &gg.Context
 	state            GameState = .start_menu
 	menu             Menu
+	settings_menu    Menu
 	delta            Delta
 	show_fps         bool
 	score            int
@@ -139,6 +140,7 @@ fn (app &App) gen_pseudo_random_coords(rangex int, rangey int) []Pos {
 fn frame(mut app App) {
 	app.gg.begin()
 	app.delta.update()
+
 	// println(app.delta.delta)
 	if app.show_fps {
 		app.gg.draw_text(15, 15, 'FPS: $app.delta.fps()',
@@ -229,6 +231,7 @@ fn (mut app App) draw_settings() {
 	}
 
 	app.draw_title('Settings')
+	app.settings_menu.draw(app.gg)
 }
 
 // update_start_menu updates the moving background items in the start menu.
@@ -303,29 +306,41 @@ fn on_event(e &gg.Event, mut app App) {
 				.key_down {
 					if e.key_code == .down {
 						// move down in the list of menu items or to the top if we're at the end
-						keys := app.menu.items.keys()
-						idx := keys.index(app.menu.focused)
+						idx := app.menu.focused
 						if idx >= 0 {
-							if idx == keys.len - 1 {
-								app.menu.focused = keys[0]
+							if idx == app.menu.items.len - 1 {
+								app.menu.focused = 0
 							} else {
-								app.menu.focused = keys[idx + 1]
+								app.menu.focused++
 							}
+						} else {
+							println('Error: app.menu.focused ($app.menu.focused) is not valid index.')
+							app.menu.focused = 0
 						}
 					} else if e.key_code == .up {
 						// move up in the list of menu items or loop to the end if we're at the top
-						keys := app.menu.items.keys()
-						idx := keys.index(app.menu.focused)
+						idx := app.menu.focused
 						if idx >= 0 {
 							if idx == 0 {
-								app.menu.focused = keys[keys.len - 1]
+								app.menu.focused = app.menu.items.len - 1
 							} else {
-								app.menu.focused = keys[idx - 1]
+								app.menu.focused--
 							}
+						} else {
+							println('Error: app.menu.focused ($app.menu.focused) is not valid index.')
+							app.menu.focused = 0
 						}
 					} else if e.key_code == .enter {
 						// invoke callback function of whatever menu item is selected
-						app.menu.items[app.menu.focused](mut app)
+						selected_item := app.menu.items[app.menu.focused]
+						match selected_item {
+							ButtonMenuItem {
+								selected_item.cb(mut app)
+							}
+							ToggleMenuItem {
+								selected_item.cb(mut app)
+							}
+						}
 					}
 				}
 				else {}
@@ -361,6 +376,43 @@ fn on_event(e &gg.Event, mut app App) {
 				.key_down {
 					if e.key_code == .escape && !app.keys_down[e.key_code] {
 						app.state = .start_menu
+					} else if e.key_code == .down {
+						// move down in the list of menu items or to the top if we're at the end
+						idx := app.settings_menu.focused
+						if idx >= 0 {
+							if idx == app.settings_menu.items.len - 1 {
+								app.menu.focused = 0
+							} else {
+								app.settings_menu.focused++
+							}
+						} else {
+							println('Error: app.menu.focused ($app.settings_menu.focused) is not valid index.')
+							app.settings_menu.focused = 0
+						}
+					} else if e.key_code == .up {
+						// move up in the list of menu items or loop to the end if we're at the top
+						idx := app.settings_menu.focused
+						if idx >= 0 {
+							if idx == 0 {
+								app.settings_menu.focused = app.settings_menu.items.len - 1
+							} else {
+								app.settings_menu.focused--
+							}
+						} else {
+							println('Error: app.menu.focused ($app.settings_menu.focused) is not valid index.')
+							app.menu.focused = 0
+						}
+					} else if e.key_code == .enter {
+						// invoke callback function of whatever menu item is selected
+						selected_item := app.settings_menu.items[app.settings_menu.focused]
+						match selected_item {
+							ButtonMenuItem {
+								selected_item.cb(mut app)
+							}
+							ToggleMenuItem {
+								selected_item.cb(mut app)
+							}
+						}
 					}
 				}
 				else {}
@@ -441,19 +493,20 @@ fn init(mut app App) {
 
 	app.player.center(&app.gg)
 
+	// start menu
 	app.menu = Menu{
-		items: {
-			'Start':    fn (mut app App) {
+		items: [
+			ButtonMenuItem{'Start', fn (mut app App) {
 				app.state = .in_game
-			}
-			'Settings': fn (mut app App) {
+			}},
+			ButtonMenuItem{'Settings', fn (mut app App) {
 				app.state = .settings
-			}
-			'Quit':     fn (mut app App) {
+			}},
+			ButtonMenuItem{'Quit', fn (mut app App) {
 				exit(0)
-			}
-		}
-		focused: 'Start'
+			}},
+		]
+		focused: 0
 		width: int(200)
 		height: int(35 / app.gg.scale)
 		text_size: int(46 / app.gg.scale)
@@ -463,6 +516,38 @@ fn init(mut app App) {
 			y: int((app.gg.height / app.gg.scale / 2) - (35 / 2))
 		}
 	}
+
+	// settings menu
+	app.settings_menu = Menu{
+		width: int(300)
+		height: int(35 / app.gg.scale)
+		text_size: int(36 / app.gg.scale)
+		padding: int(10 / app.gg.scale)
+		center_text: false
+		pos: Pos{
+			x: int((app.gg.width / app.gg.scale / 2) - (300 / 2))
+			y: int(300 / app.gg.scale) // int((app.gg.height / app.gg.scale / 2) - (35 / 2))
+		}
+	}
+
+	mut show_fps_tggl := ToggleMenuItem{
+		name: 'Show FPS'
+		value: 'false'
+	}
+	show_fps_tggl.cb = fn (mut app App) {
+		app.show_fps = !app.show_fps
+		mut show_fps := &(app.settings_menu.items[0] as ToggleMenuItem)
+		show_fps.value = (!(show_fps.value.bool())).str()
+	}
+	app.settings_menu.items << show_fps_tggl
+
+	mut back_bttn := ButtonMenuItem{
+		name: 'Back'
+		cb: fn (mut app App) {
+			app.state = .start_menu
+		}
+	}
+	app.settings_menu.items << back_bttn
 }
 
 // resize resizes the drawing area to fit the window
@@ -511,6 +596,7 @@ fn main() {
 		resized_fn: resize
 	)
 	app.init_images()
+
 	// app.asteroids = []Asteroid{len: 10, init: new_asteroid(mut app.gg, .large)}
 	for _ in 0 .. 10 {
 		app.asteroids << new_asteroid(mut app.gg, .large, app.img['lg_asteroid'])
