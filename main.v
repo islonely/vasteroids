@@ -354,7 +354,6 @@ fn on_event(e &gg.Event, mut app App) {
 			match e.typ {
 				.key_down {
 					if e.key_code == .escape {
-						app.player.center(app.gg)
 						app.state = .in_game
 					}
 				}
