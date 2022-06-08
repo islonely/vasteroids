@@ -653,6 +653,9 @@ fn init(mut app App) {
 
 // resize resizes the drawing area to fit the window
 fn resize(e &gg.Event, mut app App) {
+	winsz := app.gg.window_size()
+	app.gg.width = winsz.width
+	app.gg.height = winsz.height
 	coords := app.gen_pseudo_random_coords(int(app.gg.width), int(app.gg.height))
 	for i, mut star in app.stars {
 		star.pos = coords[i] or { break }
@@ -660,6 +663,9 @@ fn resize(e &gg.Event, mut app App) {
 	app.menu.pos = Pos{
 		x: int(app.gg.width / app.gg.scale / 2 - 200 / 2)
 		y: int(app.gg.height / app.gg.scale / 2 - 35 / 2)
+	}
+	if app.state == .start_menu {
+		app.player.center(app.gg)
 	}
 }
 
@@ -710,7 +716,7 @@ fn main() {
 		create_window: true
 		// these two currently don't do anything
 		borderless_window: true
-		resizable: false
+		resizable: true
 		//
 		window_title: win_title
 		font_bytes_bold: hyperspace.to_bytes()
