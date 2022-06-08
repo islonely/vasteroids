@@ -13,6 +13,7 @@ mut:
 	pos   Pos
 	vel   Velocity
 	angle f32
+	rotv  f32 = 2.0
 	scale f32 = 1.0
 }
 
@@ -32,6 +33,7 @@ fn new_asteroid(mut gg gg.Context, size AsteroidSize, i int) Asteroid {
 	mut minv := f32(-0.5)
 	mut scale := f32(1.0)
 	angle := rand.f32_in_range(0, 360) or { 0 }
+	rotv := rand.f32_in_range(-3, 3) or { 2 }
 	match size {
 		.small {
 			maxv *= 1.3
@@ -73,6 +75,7 @@ fn new_asteroid(mut gg gg.Context, size AsteroidSize, i int) Asteroid {
 	return Asteroid{
 		img: img
 		angle: angle
+		rotv: rotv
 		scale: scale
 		pos: Pos{
 			x: x
@@ -93,4 +96,5 @@ fn (mut a Asteroid) update(gg &gg.Context, delta f32) {
 
 	a.pos.x += a.vel.x * delta
 	a.pos.y += a.vel.y * delta
+	a.angle += a.rotv * delta
 }
