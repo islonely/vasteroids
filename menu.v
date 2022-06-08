@@ -48,6 +48,13 @@ fn (m &Menu) draw(g &gg.Context) {
 					color: if i == m.focused { m.focused_color } else { m.color }
 				)
 			}
+			NumberMenuItem {
+				g.draw_text(textx, texty, '$item.name: < $item.value >',
+					bold: true
+					size: m.text_size
+					color: if i == m.focused { m.focused_color } else { m.color }
+				)
+			}
 			TextMenuItem {
 				g.draw_text(textx, texty, '$item.name',
 					bold: true
@@ -60,7 +67,7 @@ fn (m &Menu) draw(g &gg.Context) {
 }
 
 // MenuItem is a selectable item in a menu.
-type MenuItem = ButtonMenuItem | TextMenuItem | ToggleMenuItem
+type MenuItem = ButtonMenuItem | TextMenuItem | NumberMenuItem | ToggleMenuItem
 
 // ButtonMenuItem is a MenuItem which you can press.
 struct ButtonMenuItem {
@@ -77,6 +84,17 @@ mut:
 	cb    fn (mut App) = fn (mut app App) {}
 }
 
+// NumberMenuItem is a MenuItem which you can set a number.
+struct NumberMenuItem {
+	name string
+	step int = 1
+mut:
+	value int
+	min int
+	max int
+}
+
+// TextMenuItem is a MenuItem in which text is displayed.
 struct TextMenuItem {
 	name string
 }

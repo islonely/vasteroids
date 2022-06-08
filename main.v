@@ -56,6 +56,8 @@ mut:
 	score            int
 	shots_fired      int
 	asteroids_hit    int
+	splits_per_break int = 2
+	ammo int = -1
 	player           Player
 	asteroids        []Asteroid
 	projectiles      []Projectile
@@ -85,27 +87,20 @@ fn (mut app App) break_asteroid(i int) {
 		return
 	}
 
-	mut a2 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) + 1), if a.size == .large {
-		app.img['md_asteroid']
-	} else {
-		app.img['sm_asteroid']
-	})
-	mut a3 := new_asteroid(mut app.gg, AsteroidSize(int(a.size) + 1), if a.size == .large {
-		app.img['md_asteroid']
-	} else {
-		app.img['sm_asteroid']
-	})
-	a2.pos = a.pos
-	a2.vel = a.vel
-	a2.vel.y = a.vel.x
-	a2.vel.x = a.vel.y
-	a3.pos = a.pos
-	a3.vel = a.vel
-	a3.vel.y = -a.vel.x
-	a3.vel.x = -a.vel.y
-
-	app.asteroids << a2
-	app.asteroids << a3
+	mut switch_direction := false
+	for _ in 0..app.splits_per_break {
+		mut newa := new_asteroid(mut app.gg, AsteroidSize(int(a.size) + 1), if a.size == .large {
+			app.img['md_asteroid']
+		} else {
+			app.img['sm_asteroid']
+		})
+		newa.pos = a.pos
+		newa.vel = a.vel
+		newa.vel.y = rand.f32_in_range(-a.vel.x, a.vel.x) or { a.vel.x }
+		newa.vel.x = rand.f32_in_range(-a.vel.y, a.vel.y) or { a.vel.y }
+		switch_direction = !switch_direction
+		app.asteroids << newa
+	}
 	app.asteroids.delete(i)
 }
 
@@ -434,7 +429,7 @@ fn on_event(e &gg.Event, mut app App) {
 		.settings {
 			match e.typ {
 				.key_down {
-					if e.key_code == .escape && !app.keys_down[e.key_code] {
+					if e.key_code == .escape {
 						app.state = .start_menu
 					} else if e.key_code == .down {
 						// move down in the list of menu items or to the top if we're at the end
@@ -471,6 +466,28 @@ fn on_event(e &gg.Event, mut app App) {
 							}
 							ToggleMenuItem {
 								selected_item.cb(mut app)
+							}
+							else {}
+						}
+					} else if e.key_code == .left {
+						mut selected_item := &app.settings_menu.items[app.settings_menu.focused]
+						match mut selected_item {
+							NumberMenuItem {
+								if selected_item.value > selected_item.min {
+									selected_item.value -= selected_item.step
+									app.splits_per_break = selected_item.value
+								}
+							}
+							else {}
+						}
+					} else if e.key_code == .right {
+						mut selected_item := &app.settings_menu.items[app.settings_menu.focused]
+						match mut selected_item {
+							NumberMenuItem {
+								if selected_item.value < selected_item.max {
+									selected_item.value += selected_item.step
+									app.splits_per_break = selected_item.value
+								}
 							}
 							else {}
 						}
@@ -611,6 +628,20 @@ fn init(mut app App) {
 	}
 	app.settings_menu.items << show_fps_tggl
 
+	// NOTE: I don't think gg allows you to set fullscreen
+	// mut fullscreen_tggl := ToggleMenuItem{
+	// 	name: 'Fullscreen'
+	// 	value: 'false'
+	// }
+	// fullscreen_tggl.cb = fn (mut app App) {
+	// 	app.gg.fullscreen = !app.gg.fullscreen
+	// 	mut fullscreen := &(app.settings_menu.items[1] as ToggleMenuItem)
+	// 	fullscreen.value = (!(fullscreen.value.bool())).str()
+	// }
+
+	app.settings_menu.items << NumberMenuItem{'Splits', 1, 2, 0, 20}
+	// app.settings_menu.items << NumberMenuItem{'Ammo', 100, 0, -1, 10000}
+	
 	mut back_bttn := ButtonMenuItem{
 		name: 'Back'
 		cb: fn (mut app App) {
