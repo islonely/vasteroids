@@ -8,6 +8,7 @@
 */
 import gg
 import gx
+import net
 import rand
 
 // window configuration
@@ -39,7 +40,7 @@ enum GameState {
 	paused
 	settings
 	in_game
-	new_game
+	multiplayer_in_game
 	start_menu
 	game_over
 }
@@ -74,6 +75,9 @@ mut:
 		gg.KeyCode.x:     false
 		gg.KeyCode.z:     false
 	}
+
+	is_server bool = true
+	conn      &net.UdpConn = 0
 }
 
 // break_asteroid splits in asteroid into smaller chunks or destroys it if
@@ -165,7 +169,6 @@ fn frame(mut app App) {
 			app.draw()
 			app.update()
 		}
-		.new_game {}
 		.start_menu {
 			app.draw_start_menu()
 			app.update_start_menu()
@@ -177,6 +180,10 @@ fn frame(mut app App) {
 		.settings {
 			app.draw_settings()
 			app.update_settings()
+		}
+		.multiplayer_in_game {
+			app.draw_multiplayer_in_game()
+			app.update_multiplayer_in_game()
 		}
 	}
 	app.gg.end()
@@ -568,6 +575,9 @@ fn init(mut app App) {
 			ButtonMenuItem{'Start', fn (mut app App) {
 				app.state = .in_game
 			}},
+			ButtonMenuItem{'Multiplayer', fn (mut app App) {
+				app.state = .multiplayer_in_game
+			}},
 			ButtonMenuItem{'Settings', fn (mut app App) {
 				app.state = .settings
 			}},
@@ -701,6 +711,13 @@ fn main() {
 	}}
 
 	app.init_level()
+
+	if app.is_server {
+		app.conn = net.listen_udp(':33322') or {
+			println('Failed to listen on port 33322.')
+			exit(0)
+		}
+	}
 
 	app.gg.run()
 }
