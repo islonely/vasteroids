@@ -7,7 +7,7 @@ import rand
 
 // Player is the object which the player controls
 struct Player {
-	img &gg.Image
+	img &gg.Image = unsafe { nil }
 mut:
 	pos            Pos
 	vel            Velocity
@@ -66,21 +66,21 @@ fn (mut p Player) update(mut app App) {
 }
 
 // center places the character in the center of the window
-fn (mut p Player) center(gg &gg.Context) {
-	x := (gg.width / 2) - (p.img.width / 2)
-	y := (gg.height / 2) - (p.img.height / 2)
+fn (mut p Player) center(g &gg.Context) {
+	x := (g.width / 2) - (p.img.width / 2)
+	y := (g.height / 2) - (p.img.height / 2)
 	p.pos.x = x
 	p.pos.y = y
 }
 
 // teleport moves the player to a random location on the window
-fn (mut p Player) teleport(gg &gg.Context) {
+fn (mut p Player) teleport(g &gg.Context) {
 	mut padding := u32(25)
-	p.pos.x = rand.u32_in_range(padding, u32(gg.width - p.img.width) - padding) or {
+	p.pos.x = rand.u32_in_range(padding, u32(g.width - p.img.width) - padding) or {
 		println('Fatal Error: $err.msg()')
 		exit(0)
 	}
-	p.pos.y = rand.u32_in_range(padding, u32(gg.height - p.img.height) - padding) or {
+	p.pos.y = rand.u32_in_range(padding, u32(g.height - p.img.height) - padding) or {
 		println('Fatal Error: $err.msg()')
 		exit(0)
 	}

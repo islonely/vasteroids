@@ -89,7 +89,7 @@ fn (mut app App) break_asteroid(i int) {
 
 	mut switch_direction := false
 	for _ in 0..app.splits_per_break {
-		mut newa := new_asteroid(mut app.gg, AsteroidSize(int(a.size) + 1), if a.size == .large {
+		mut newa := new_asteroid(mut app.gg, unsafe { AsteroidSize(int(a.size) + 1) }, if a.size == .large {
 			app.img['md_asteroid']
 		} else {
 			app.img['sm_asteroid']
@@ -412,7 +412,7 @@ fn on_event(e &gg.Event, mut app App) {
 					} else if e.key_code == .escape && !app.keys_down[e.key_code] {
 						app.state = .paused
 					} else if e.key_code == .b && !app.keys_down[e.key_code]
-						&& gg.Modifier(e.modifiers) == .ctrl {
+						&& unsafe {gg.Modifier(e.modifiers) } == .ctrl {
 						app.break_asteroid(0)
 					} else if e.key_code in app.keys_down {
 						app.keys_down[e.key_code] = true

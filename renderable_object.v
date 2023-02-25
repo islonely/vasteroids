@@ -37,17 +37,17 @@ fn draw_renderable_object(ro &RenderableObject, g &gg.Context) {
 
 // wrap_around_screen allows RenderableObjects to appear as if they loop
 // around the screen when it reaches the edges.
-fn wrap_around_screen(mut ro RenderableObject, gg &gg.Context) {
-	if ro.pos.x > gg.width {
+fn wrap_around_screen(mut ro RenderableObject, g &gg.Context) {
+	if ro.pos.x > g.width {
 		ro.pos.x = -ro.img.width * ro.scale
 	}
 	if ro.pos.x < -ro.img.width * ro.scale {
-		ro.pos.x = gg.width
+		ro.pos.x = g.width
 	}
-	if ro.pos.y > gg.height {
+	if ro.pos.y > g.height {
 		ro.pos.y = -ro.img.height * ro.scale
 	}
 	if ro.pos.y < -ro.img.height * ro.scale {
-		ro.pos.y = gg.height
+		ro.pos.y = g.height
 	}
 }

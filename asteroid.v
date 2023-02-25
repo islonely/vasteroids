@@ -7,7 +7,7 @@ import rand
 // their projectiles at.
 [heap]
 struct Asteroid {
-	img  &gg.Image
+	img  &gg.Image = unsafe { nil }
 	size AsteroidSize
 mut:
 	pos   Pos
@@ -27,8 +27,8 @@ pub enum AsteroidSize {
 
 // new_asteroid instantiates a new Asteroid and sets it's velocity
 // based on it's size
-fn new_asteroid(mut gg gg.Context, size AsteroidSize, i int) Asteroid {
-	mut img := gg.get_cached_image_by_idx(i)
+fn new_asteroid(mut g gg.Context, size AsteroidSize, i int) Asteroid {
+	mut img := g.get_cached_image_by_idx(i)
 	mut maxv := f32(0.5)
 	mut minv := f32(-0.5)
 	mut scale := f32(1.0)
@@ -91,8 +91,8 @@ fn new_asteroid(mut gg gg.Context, size AsteroidSize, i int) Asteroid {
 }
 
 // update handles the physics/logic for asteroids
-fn (mut a Asteroid) update(gg &gg.Context, delta f32) {
-	wrap_around_screen(mut a, gg)
+fn (mut a Asteroid) update(g &gg.Context, delta f32) {
+	wrap_around_screen(mut a, g)
 
 	a.pos.x += a.vel.x * delta
 	a.pos.y += a.vel.y * delta

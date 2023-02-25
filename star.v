@@ -6,7 +6,7 @@ import rand
 // Star is just an image of a star used as a decoration.
 [heap]
 struct Star {
-	img &gg.Image
+	img &gg.Image = unsafe { nil }
 mut:
 	pos   Pos
 	angle f32
@@ -14,8 +14,8 @@ mut:
 }
 
 // new_star instantiates a Star
-fn new_star(mut gg gg.Context, i int) Star {
-	img := gg.get_cached_image_by_idx(i)
+fn new_star(mut g gg.Context, i int) Star {
+	img := g.get_cached_image_by_idx(i)
 	x := rand.u32n(u32(win_width - img.width)) or {
 		println('Fatal Error: $err.msg()')
 		(-100)
