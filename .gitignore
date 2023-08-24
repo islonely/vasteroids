@@ -1,3 +1,6 @@
 modules/
 main
 main.exe
+.idea/
+build/
+v_test_app.apk

@@ -670,13 +670,13 @@ fn resize(e &gg.Event, mut app App) {
 }
 
 // init_images caches the images to the gg.Context of the game.
-fn (mut app App) init_images() {
-	app.img['player'] = app.gg.cache_image(app.gg.create_image_from_byte_array(player_img.to_bytes()))
-	app.img['sm_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(sm_asteroid.to_bytes()))
-	app.img['md_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(md_asteroid.to_bytes()))
-	app.img['lg_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(lg_asteroid.to_bytes()))
-	app.img['star'] = app.gg.cache_image(app.gg.create_image_from_byte_array(star.to_bytes()))
-	app.img['projectile'] = app.gg.cache_image(app.gg.create_image_from_byte_array(projectile.to_bytes()))
+fn (mut app App) init_images() ! {
+	app.img['player'] = app.gg.cache_image(app.gg.create_image_from_byte_array(player_img.to_bytes())!)
+	app.img['sm_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(sm_asteroid.to_bytes())!)
+	app.img['md_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(md_asteroid.to_bytes())!)
+	app.img['lg_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(lg_asteroid.to_bytes())!)
+	app.img['star'] = app.gg.cache_image(app.gg.create_image_from_byte_array(star.to_bytes())!)
+	app.img['projectile'] = app.gg.cache_image(app.gg.create_image_from_byte_array(projectile.to_bytes())!)
 }
 
 // init_level spawns new asteroids and resets player velocity
@@ -727,7 +727,10 @@ fn main() {
 		init_fn: init
 		resized_fn: resize
 	)
-	app.init_images()
+	app.init_images() or {
+		println('Failed to load textures. Exiting...')
+		exit(1)
+	}
 	app.stars = []Star{len: 200, init: new_star(mut app.gg, app.img['star'])}
 	app.projectiles = []Projectile{len: app.max_projectiles, init: Projectile{
 		img: app.gg.get_cached_image_by_idx(app.img['projectile'])

@@ -73,7 +73,7 @@ type MenuItem = ButtonMenuItem | TextMenuItem | NumberMenuItem | ToggleMenuItem
 struct ButtonMenuItem {
 	name string
 mut:
-	cb fn (mut App)
+	cb fn (mut App) = fn (mut app App) {}
 }
 
 // ToggleMenuItem is a MenuItem which you can toggle.
