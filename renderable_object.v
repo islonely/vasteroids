@@ -7,7 +7,7 @@ import gx
 interface RenderableObject {
 	img &gg.Image
 mut:
-	pos Pos
+	pos   Pos
 	angle f32
 	scale f32
 }
@@ -17,12 +17,12 @@ mut:
 fn draw_renderable_object(ro &RenderableObject, g &gg.Context) {
 	// gg.draw_image(ro.pos.x, ro.pos.y, ro.img.width, ro.img.height, ro.img)
 	g.draw_image_with_config(
-		rotate: int(ro.angle)
-		img: ro.img
+		rotation: int(ro.angle)
+		img:      ro.img
 		img_rect: gg.Rect{
-			x: ro.pos.x
-			y: ro.pos.y
-			width: ro.img.width * ro.scale / g.scale
+			x:      ro.pos.x
+			y:      ro.pos.y
+			width:  ro.img.width * ro.scale / g.scale
 			height: ro.img.height * ro.scale / g.scale
 		}
 	)

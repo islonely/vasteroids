@@ -36,29 +36,29 @@ fn (m &Menu) draw(g &gg.Context) {
 		match item {
 			ButtonMenuItem {
 				g.draw_text(textx, texty, item.name,
-					bold: true
-					size: m.text_size
+					bold:  true
+					size:  m.text_size
 					color: if i == m.focused { m.focused_color } else { m.color }
 				)
 			}
 			ToggleMenuItem {
-				g.draw_text(textx, texty, '$item.name: $item.value',
-					bold: true
-					size: m.text_size
+				g.draw_text(textx, texty, '${item.name}: ${item.value}',
+					bold:  true
+					size:  m.text_size
 					color: if i == m.focused { m.focused_color } else { m.color }
 				)
 			}
 			NumberMenuItem {
-				g.draw_text(textx, texty, '$item.name: < $item.value >',
-					bold: true
-					size: m.text_size
+				g.draw_text(textx, texty, '${item.name}: < ${item.value} >',
+					bold:  true
+					size:  m.text_size
 					color: if i == m.focused { m.focused_color } else { m.color }
 				)
 			}
 			TextMenuItem {
-				g.draw_text(textx, texty, '$item.name',
-					bold: true
-					size: m.text_size
+				g.draw_text(textx, texty, '${item.name}',
+					bold:  true
+					size:  m.text_size
 					color: if i == m.focused { m.focused_color } else { m.color }
 				)
 			}
@@ -90,8 +90,8 @@ struct NumberMenuItem {
 	step int = 1
 mut:
 	value int
-	min int
-	max int
+	min   int
+	max   int
 }
 
 // TextMenuItem is a MenuItem in which text is displayed.

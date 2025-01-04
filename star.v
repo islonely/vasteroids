@@ -4,7 +4,7 @@ import gg
 import rand
 
 // Star is just an image of a star used as a decoration.
-[heap]
+@[heap]
 struct Star {
 	img &gg.Image = unsafe { nil }
 mut:
@@ -17,11 +17,11 @@ mut:
 fn new_star(mut g gg.Context, i int) Star {
 	img := g.get_cached_image_by_idx(i)
 	x := rand.u32n(u32(win_width - img.width)) or {
-		println('Fatal Error: $err.msg()')
+		println('Fatal Error: ${err.msg()}')
 		(-100)
 	}
 	y := rand.u32n(u32(win_height - img.height)) or {
-		println('Fatal Error: $err.msg()')
+		println('Fatal Error: ${err.msg()}')
 		(-100)
 	}
 	return Star{

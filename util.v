@@ -23,7 +23,7 @@ mut:
 }
 
 // is_odd returns whether or not a given number is odd or even.
-[inline]
+@[inline]
 fn is_odd(x int) int {
 	// same as if x % 2 == 0 { -1 } else { 1 } but it's branchless.
 	// I just found out about branchless programming
@@ -61,7 +61,7 @@ fn (mut d Delta) update() {
 }
 
 // fps returns the average of the fps buffer
-[inline]
+@[inline]
 fn (d Delta) fps() int {
 	return (arrays.sum(d.last_fps) or { 0 }) / d.last_fps.len
 }

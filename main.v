@@ -11,28 +11,24 @@ import gx
 import rand
 
 // window configuration
-const (
-	win_title   = 'Vasteroids'
-	win_width   = 1200
-	win_height  = 800
-	win_bgcolor = gx.Color{
-		r: 20
-		g: 20
-		b: 20
-	}
-)
+const win_title = 'Vasteroids'
+const win_width = 1200
+const win_height = 800
+const win_bgcolor = gx.Color{
+	r: 20
+	g: 20
+	b: 20
+}
 
 // sprites
-const (
-	sm_asteroid = $embed_file('img/sm_asteroid.png')
-	md_asteroid = $embed_file('img/md_asteroid.png')
-	lg_asteroid = $embed_file('img/lg_asteroid.png')
-	star        = $embed_file('img/star.png')
-	projectile  = $embed_file('img/laser.png')
-	player_img  = $embed_file('img/player.png')
+const sm_asteroid_img = $embed_file('img/sm_asteroid.png')
+const md_asteroid_img = $embed_file('img/md_asteroid.png')
+const lg_asteroid_img = $embed_file('img/lg_asteroid.png')
+const star_img = $embed_file('img/star.png')
+const projectile_img = $embed_file('img/laser.png')
+const player_img = $embed_file('img/player.png')
 
-	hyperspace  = $embed_file('fonts/hyperspace/Hyperspace Bold.otf')
-)
+const hyperspace = $embed_file('fonts/hyperspace/Hyperspace Bold.otf')
 
 // GameState is the state which the game is in.
 enum GameState {
@@ -46,8 +42,8 @@ enum GameState {
 
 struct App {
 mut:
-	gg               &gg.Context
-	state            GameState = .start_menu
+	gg               &gg.Context = unsafe { nil }
+	state            GameState   = .start_menu
 	menu             Menu
 	settings_menu    Menu
 	delta            Delta
@@ -57,7 +53,7 @@ mut:
 	shots_fired      int
 	asteroids_hit    int
 	splits_per_break int = 2
-	ammo int = -1
+	ammo             int = -1
 	player           Player
 	asteroids        []Asteroid
 	projectiles      []Projectile
@@ -88,8 +84,9 @@ fn (mut app App) break_asteroid(i int) {
 	}
 
 	mut switch_direction := false
-	for _ in 0..app.splits_per_break {
-		mut newa := new_asteroid(mut app.gg, unsafe { AsteroidSize(int(a.size) + 1) }, if a.size == .large {
+	for _ in 0 .. app.splits_per_break {
+		mut newa := new_asteroid(mut app.gg, unsafe { AsteroidSize(int(a.size) + 1) },
+			if a.size == .large {
 			app.img['md_asteroid']
 		} else {
 			app.img['sm_asteroid']
@@ -145,9 +142,9 @@ fn frame(mut app App) {
 	if app.show_fps {
 		fps := app.delta.fps()
 		app.gg.draw_text(int(app.gg.width / app.gg.scale / 2) - app.gg.text_width(fps.str()),
-			15, 'FPS: $fps',
-			bold: true
-			size: 32
+			15, 'FPS: ${fps}',
+			bold:  true
+			size:  32
 			color: gx.white
 		)
 	}
@@ -192,16 +189,15 @@ fn (mut app App) draw() {
 		draw_renderable_object(a, app.gg)
 	}
 
-	app.gg.draw_text(int(15 / app.gg.scale), int(15 / app.gg.scale), 'Level: $app.level.str()',
-		
-		bold: true
-		size: int(32 / app.gg.scale)
+	app.gg.draw_text(int(15 / app.gg.scale), int(15 / app.gg.scale), 'Level: ${app.level.str()}',
+		bold:  true
+		size:  int(32 / app.gg.scale)
 		color: gx.white
 	)
-	app.gg.draw_text(int(app.gg.width / app.gg.scale - app.gg.text_width('Score: $app.score.str()') - 15),
-		int(15 / app.gg.scale), 'Score: $app.score.str()',
-		bold: true
-		size: int(32 / app.gg.scale)
+	app.gg.draw_text(int(app.gg.width / app.gg.scale - app.gg.text_width('Score: ${app.score.str()}') - 15),
+		int(15 / app.gg.scale), 'Score: ${app.score.str()}',
+		bold:  true
+		size:  int(32 / app.gg.scale)
 		color: gx.white
 	)
 }
@@ -257,23 +253,23 @@ fn (mut app App) draw_game_over() {
 	}
 
 	game_over_menu := Menu{
-		items: [
-			TextMenuItem{'Level: $app.level'},
-			TextMenuItem{'Score: $app.score'},
-			TextMenuItem{'Shots Fired: $app.shots_fired'},
+		items:       [
+			TextMenuItem{'Level: ${app.level}'},
+			TextMenuItem{'Score: ${app.score}'},
+			TextMenuItem{'Shots Fired: ${app.shots_fired}'},
 			TextMenuItem{'Accuracy: ' + ((app.asteroids_hit / f32(app.shots_fired)) * 100).str() +
 				'%'},
 			menu_line,
 			TextMenuItem{'Enter to continue...'},
 		]
-		width: int(300)
-		height: int(35 / app.gg.scale)
-		text_size: int(36 / app.gg.scale)
-		padding: int(10 / app.gg.scale)
+		width:       int(300)
+		height:      int(35 / app.gg.scale)
+		text_size:   int(36 / app.gg.scale)
+		padding:     int(10 / app.gg.scale)
 		center_text: false
-		focused: -1
-		color: gx.white
-		pos: Pos{
+		focused:     -1
+		color:       gx.white
+		pos:         Pos{
 			x: int((app.gg.width / app.gg.scale / 2) - (300 / 2))
 			y: int(300 / app.gg.scale) // int((app.gg.height / app.gg.scale / 2) - (35 / 2))
 		}
@@ -308,8 +304,8 @@ fn (mut app App) draw_title(title string) {
 	titlex := int((app.gg.width / app.gg.scale / 2) - (title.len * title_size / 4) + 12)
 	titley := int(170 / app.gg.scale)
 	app.gg.draw_text(titlex, titley, title,
-		size: title_size
-		bold: true
+		size:  title_size
+		bold:  true
 		color: gx.white
 	)
 }
@@ -319,8 +315,8 @@ fn (mut app App) draw_title_center(text string) {
 	x := int((app.gg.width / 2) - (text.len * size / 4) + 12)
 	y := int((app.gg.height / 2) - (app.gg.text_height(text) / 2)) - 10
 	app.gg.draw_text(x, y, text,
-		size: size
-		bold: true
+		size:  size
+		bold:  true
 		color: gx.white
 	)
 }
@@ -368,7 +364,7 @@ fn on_event(e &gg.Event, mut app App) {
 								app.menu.focused++
 							}
 						} else {
-							println('Error: app.menu.focused ($app.menu.focused) is not valid index.')
+							println('Error: app.menu.focused (${app.menu.focused}) is not valid index.')
 							app.menu.focused = 0
 						}
 					} else if e.key_code == .up {
@@ -381,7 +377,7 @@ fn on_event(e &gg.Event, mut app App) {
 								app.menu.focused--
 							}
 						} else {
-							println('Error: app.menu.focused ($app.menu.focused) is not valid index.')
+							println('Error: app.menu.focused (${app.menu.focused}) is not valid index.')
 							app.menu.focused = 0
 						}
 					} else if e.key_code == .enter {
@@ -412,7 +408,7 @@ fn on_event(e &gg.Event, mut app App) {
 					} else if e.key_code == .escape && !app.keys_down[e.key_code] {
 						app.state = .paused
 					} else if e.key_code == .b && !app.keys_down[e.key_code]
-						&& unsafe {gg.Modifier(e.modifiers) } == .ctrl {
+						&& unsafe { gg.Modifier(e.modifiers) } == .ctrl {
 						app.break_asteroid(0)
 					} else if e.key_code in app.keys_down {
 						app.keys_down[e.key_code] = true
@@ -441,7 +437,7 @@ fn on_event(e &gg.Event, mut app App) {
 								app.settings_menu.focused++
 							}
 						} else {
-							println('Error: app.menu.focused ($app.settings_menu.focused) is not valid index.')
+							println('Error: app.menu.focused (${app.settings_menu.focused}) is not valid index.')
 							app.settings_menu.focused = 0
 						}
 					} else if e.key_code == .up {
@@ -454,7 +450,7 @@ fn on_event(e &gg.Event, mut app App) {
 								app.settings_menu.focused--
 							}
 						} else {
-							println('Error: app.menu.focused ($app.settings_menu.focused) is not valid index.')
+							println('Error: app.menu.focused (${app.settings_menu.focused}) is not valid index.')
 							app.menu.focused = 0
 						}
 					} else if e.key_code == .enter {
@@ -581,7 +577,7 @@ fn init(mut app App) {
 
 	// start menu
 	app.menu = Menu{
-		items: [
+		items:     [
 			ButtonMenuItem{'Start', fn (mut app App) {
 				app.state = .in_game
 			}},
@@ -592,12 +588,12 @@ fn init(mut app App) {
 				exit(0)
 			}},
 		]
-		focused: 0
-		width: int(200)
-		height: int(35 / app.gg.scale)
+		focused:   0
+		width:     int(200)
+		height:    int(35 / app.gg.scale)
 		text_size: int(46 / app.gg.scale)
-		padding: int(10 / app.gg.scale)
-		pos: Pos{
+		padding:   int(10 / app.gg.scale)
+		pos:       Pos{
 			x: int((app.gg.width / app.gg.scale / 2) - (200 / 2))
 			y: int((app.gg.height / app.gg.scale / 2) - (35 / 2))
 		}
@@ -605,19 +601,19 @@ fn init(mut app App) {
 
 	// settings menu
 	app.settings_menu = Menu{
-		width: int(300)
-		height: int(35 / app.gg.scale)
-		text_size: int(36 / app.gg.scale)
-		padding: int(10 / app.gg.scale)
+		width:       int(300)
+		height:      int(35 / app.gg.scale)
+		text_size:   int(36 / app.gg.scale)
+		padding:     int(10 / app.gg.scale)
 		center_text: false
-		pos: Pos{
+		pos:         Pos{
 			x: int((app.gg.width / app.gg.scale / 2) - (300 / 2))
 			y: int(300 / app.gg.scale) // int((app.gg.height / app.gg.scale / 2) - (35 / 2))
 		}
 	}
 
 	mut show_fps_tggl := ToggleMenuItem{
-		name: 'Show FPS'
+		name:  'Show FPS'
 		value: 'false'
 	}
 	show_fps_tggl.cb = fn (mut app App) {
@@ -641,10 +637,10 @@ fn init(mut app App) {
 
 	app.settings_menu.items << NumberMenuItem{'Splits', 1, 2, 0, 20}
 	// app.settings_menu.items << NumberMenuItem{'Ammo', 100, 0, -1, 10000}
-	
+
 	mut back_bttn := ButtonMenuItem{
 		name: 'Back'
-		cb: fn (mut app App) {
+		cb:   fn (mut app App) {
 			app.state = .start_menu
 		}
 	}
@@ -672,11 +668,11 @@ fn resize(e &gg.Event, mut app App) {
 // init_images caches the images to the gg.Context of the game.
 fn (mut app App) init_images() ! {
 	app.img['player'] = app.gg.cache_image(app.gg.create_image_from_byte_array(player_img.to_bytes())!)
-	app.img['sm_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(sm_asteroid.to_bytes())!)
-	app.img['md_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(md_asteroid.to_bytes())!)
-	app.img['lg_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(lg_asteroid.to_bytes())!)
-	app.img['star'] = app.gg.cache_image(app.gg.create_image_from_byte_array(star.to_bytes())!)
-	app.img['projectile'] = app.gg.cache_image(app.gg.create_image_from_byte_array(projectile.to_bytes())!)
+	app.img['sm_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(sm_asteroid_img.to_bytes())!)
+	app.img['md_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(md_asteroid_img.to_bytes())!)
+	app.img['lg_asteroid'] = app.gg.cache_image(app.gg.create_image_from_byte_array(lg_asteroid_img.to_bytes())!)
+	app.img['star'] = app.gg.cache_image(app.gg.create_image_from_byte_array(star_img.to_bytes())!)
+	app.img['projectile'] = app.gg.cache_image(app.gg.create_image_from_byte_array(projectile_img.to_bytes())!)
 }
 
 // init_level spawns new asteroids and resets player velocity
@@ -703,29 +699,28 @@ fn (mut app App) init_level() {
 	app.level++
 }
 
-[console]
+@[console]
 fn main() {
 	mut app := &App{
-		gg: 0
 		bgcolor: win_bgcolor
 	}
 	app.gg = gg.new_context(
-		bg_color: app.bgcolor
-		width: win_width
-		height: win_height
+		bg_color:      app.bgcolor
+		width:         win_width
+		height:        win_height
 		create_window: true
 		// these two currently don't do anything
 		borderless_window: true
-		resizable: true
+		resizable:         true
 		//
-		window_title: win_title
-		font_bytes_bold: hyperspace.to_bytes()
+		window_title:      win_title
+		font_bytes_bold:   hyperspace.to_bytes()
 		font_bytes_normal: hyperspace.to_bytes()
-		frame_fn: frame
-		user_data: app
-		event_fn: on_event
-		init_fn: init
-		resized_fn: resize
+		frame_fn:          frame
+		user_data:         app
+		event_fn:          on_event
+		init_fn:           init
+		resized_fn:        resize
 	)
 	app.init_images() or {
 		println('Failed to load textures. Exiting...')

@@ -3,9 +3,9 @@ module main
 import gg
 
 // Projectile is the red laser that is shot when the user presses the fire button.
-[heap]
+@[heap]
 struct Projectile {
-	img &gg.Image
+	img &gg.Image = unsafe { nil }
 mut:
 	pos   Pos
 	vel   Velocity

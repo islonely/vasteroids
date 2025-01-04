@@ -21,12 +21,12 @@ mut:
 // draw handles rendering the player to the screen
 fn (mut p Player) draw(g &gg.Context) {
 	g.draw_image_with_config(
-		rotate: int(p.angle)
-		img: p.img
+		rotation: int(p.angle)
+		img:      p.img
 		img_rect: gg.Rect{
-			x: p.pos.x
-			y: p.pos.y
-			width: p.img.width / g.scale
+			x:      p.pos.x
+			y:      p.pos.y
+			width:  p.img.width / g.scale
 			height: p.img.height / g.scale
 		}
 	)
@@ -77,11 +77,11 @@ fn (mut p Player) center(g &gg.Context) {
 fn (mut p Player) teleport(g &gg.Context) {
 	mut padding := u32(25)
 	p.pos.x = rand.u32_in_range(padding, u32(g.width - p.img.width) - padding) or {
-		println('Fatal Error: $err.msg()')
+		println('Fatal Error: ${err.msg()}')
 		exit(0)
 	}
 	p.pos.y = rand.u32_in_range(padding, u32(g.height - p.img.height) - padding) or {
-		println('Fatal Error: $err.msg()')
+		println('Fatal Error: ${err.msg()}')
 		exit(0)
 	}
 	p.vel.x = 0
